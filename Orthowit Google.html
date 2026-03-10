@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Suivi Ortho 🦷</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366F1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: #F8FAFC; overscroll-behavior: none; }
+        .day-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
+        .is-pressing { transform: scale(0.92); filter: brightness(0.9); }
+        
+        .completed-done { background-color: #22C55E !important; border-color: #16A34A !important; color: white !important; }
+        .completed-double { background-color: #059669 !important; border-color: #047857 !important; color: white !important; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+        .completed-missed { background-color: #F43F5E !important; border-color: #E11D48 !important; color: white !important; }
+        
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); border-color: #fb923c; }
+            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); border-color: #f97316; }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); border-color: #fb923c; }
+        }
+        .needs-attention { animation: pulse-orange 2s infinite; border-width: 3px !important; }
+        #loader { position: fixed; inset: 0; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s ease; }
+    </style>
+</head>
+<body class="pb-10">
+
+    <div id="loader">
+        <div id="loader-content" class="flex flex-col items-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
+            <p class="text-slate-500 font-bold text-sm text-center">Préparation de ton sourire...<br><span class="text-[10px] opacity-50">Synchronisation Cloud</span></p>
+        </div>
+    </div>
+
+    <header class="bg-white p-6 shadow-sm rounded-b-[40px] mb-6 flex justify-between items-center border-b border-slate-100">
+        <div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight text-indigo-600">Suivi Ortho ✨</h1>
+            <div class="flex items-center gap-2">
+                <div id="status-dot" class="h-2 w-2 rounded-full bg-slate-300"></div>
+                <p id="status-text" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-ellipsis overflow-hidden max-w-[150px]">Connexion...</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <button id="logout-btn" onclick="logout()" class="hidden bg-slate-100 p-3 rounded-2xl text-sm hover:bg-rose-100 transition-colors">🚪</button>
+            <button onclick="alert('Installe l\'app sur ton écran d\'accueil pour un meilleur suivi !')" class="bg-slate-100 p-3 rounded-2xl text-xl hover:bg-indigo-100 transition-colors">🔔</button>
+        </div>
+    </header>
+
+    <main id="app-content" class="max-w-md mx-auto px-6 opacity-0 transition-opacity duration-500">
+        <div class="bg-slate-900 rounded-[32px] p-6 text-white mb-8 shadow-2xl relative overflow-hidden">
+            <div id="time-alert" class="hidden absolute top-0 right-0 bg-orange-500 text-[8px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-tighter">C'est l'heure de 19h ! ⏳</div>
+            <div class="flex justify-between items-end mb-4">
+                <div>
+                    <p class="text-indigo-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Objectif Sourire</p>
+                    <h2 class="text-5xl font-black italic" id="counter">0 / 30</h2>
+                </div>
+                <p id="message" class="text-indigo-400 font-bold text-sm leading-tight max-w-[120px] text-right">Chargement...</p>
+            </div>
+            <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden p-1">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-3" id="grid"></div>
+
+        <div class="mt-8 space-y-3">
+            <div class="flex justify-center gap-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-500"></div>Fait</div>
+                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-700"></div>Double</div>
+                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-rose-500"></div>Oubli</div>
+            </div>
+            <p class="text-center text-[8px] text-slate-300 uppercase font-bold tracking-widest italic italic">Double clic = Mode "Double" / Appui long = Oubli</p>
+        </div>
+
+        <button onclick="confirmReset()" class="block mx-auto mt-12 text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Réinitialiser mon suivi</button>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBw6soSae9hhG1I79KDcl0P6NdeBR2xLLs",
+            databaseURL: "https://mon-sourire-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "mon-sourire",
+            appId: "1:891324344626:web:b3a769bbe2298f85654f2b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        let daysState = {};
+        let currentUser = null;
+        let startDate = null;
+        const totalDays = 30;
+
+        // --- GESTION DE L'AUTHENTIFICATION ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('logout-btn').classList.remove('hidden');
+                document.getElementById('status-text').innerText = user.displayName;
+                document.getElementById('status-dot').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
+                
+                // On récupère la date de début et les données depuis Firebase
+                const userPath = 'users/' + user.uid;
+                onValue(ref(db, userPath), (snapshot) => {
+                    const data = snapshot.val() || {};
+                    daysState = data.suivi || {};
+                    
+                    // Si aucune date de début, on l'initialise
+                    if (!data.startDate) {
+                        startDate = new Date();
+                        set(ref(db, userPath + '/startDate'), startDate.toISOString());
+                    } else {
+                        startDate = new Date(data.startDate);
+                    }
+                    
+                    render();
+                    checkTimeAndAlert();
+                    hideLoader();
+                });
+            } else {
+                showLoginScreen();
+            }
+        });
+
+        window.login = () => {
+            signInWithPopup(auth, provider).catch(error => alert("Oups ! " + error.message));
+        };
+
+        window.logout = () => {
+            if(confirm("Se déconnecter de " + currentUser.displayName + " ?")) {
+                signOut(auth).then(() => location.reload());
+            }
+        };
+
+        // --- RENDU ET LOGIQUE ---
+        function render() {
+            const grid = document.getElementById('grid');
+            let currentTotal = 0;
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const isAfter19h = now.getHours() >= 19;
+
+            grid.innerHTML = '';
+            for (let i = 0; i < totalDays; i++) {
+                const date = new Date(startDate); 
+                date.setDate(startDate.getDate() + i);
+                const key = date.toISOString().split('T')[0];
+                const state = daysState[key];
+                
+                if (state === 'done') currentTotal += 1;
+                if (state === 'double') currentTotal += 2;
+
+                const btn = document.createElement('button');
+                btn.className = `day-btn h-20 rounded-[22px] border-2 flex flex-col items-center justify-center font-bold `;
+                
+                if (state === 'done') {
+                    btn.classList.add('completed-done');
+                    btn.innerHTML = '✅';
+                } else if (state === 'double') {
+                    btn.classList.add('completed-double');
+                    btn.innerHTML = '<span class="text-[10px] mb-0.5">x2</span>✅';
+                } else if (state === 'missed') {
+                    btn.classList.add('completed-missed');
+                    btn.innerHTML = '❌';
+                } else {
+                    btn.classList.add('bg-white', 'border-slate-100', 'text-slate-400');
+                    btn.innerHTML = `<span class="text-[9px] opacity-50 uppercase">${date.toLocaleDateString('fr-FR', {weekday:'short'})}</span><span class="text-xl">${date.getDate()}</span>`;
+                    if (key === todayStr && isAfter19h) btn.classList.add('needs-attention');
+                }
+
+                setupTouchEvents(btn, key);
+                grid.appendChild(btn);
+            }
+            
+            document.getElementById('counter').innerText = `${currentTotal} / ${totalDays}`;
+            document.getElementById('progress-bar').style.width = `${Math.min((currentTotal/totalDays)*100, 100)}%`;
+            document.getElementById('message').innerText = currentTotal >= totalDays ? "Gagné ! 🎉" : (isAfter19h && !daysState[todayStr] ? "Vite ! 🦷" : "Bravo ! ✨");
+            document.getElementById('app-content').classList.remove('opacity-0');
+        }
+
+        let lastTap = 0;
+        let pressTimer;
+
+        function setupTouchEvents(btn, key) {
+            btn.onpointerdown = () => {
+                btn.classList.add('is-pressing');
+                pressTimer = setTimeout(() => {
+                    if (window.navigator.vibrate) window.navigator.vibrate(40);
+                    updateCloud(key, 'missed');
+                }, 700);
+            };
+
+            btn.onpointerup = () => {
+                clearTimeout(pressTimer);
+                btn.classList.remove('is-pressing');
+                const now = Date.now();
+                if (now - lastTap < 300) {
+                    updateCloud(key, 'double');
+                } else {
+                    setTimeout(() => { if (Date.now() - lastTap >= 300) updateCloud(key, 'done'); }, 300);
+                }
+                lastTap = now;
+            };
+        }
+
+        function updateCloud(key, type) {
+            if (!currentUser) return;
+            const newState = {...daysState};
+            if (newState[key] === type) delete newState[key];
+            else newState[key] = type;
+            
+            set(ref(db, 'users/' + currentUser.uid + '/suivi'), newState);
+            if (window.navigator.vibrate) window.navigator.vibrate(10);
+            
+            const score = Object.values(newState).reduce((acc, val) => (val === 'done' ? acc + 1 : (val === 'double' ? acc + 2 : acc)), 0);
+            if (score >= totalDays) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        }
+
+        function showLoginScreen() {
+            const loader = document.getElementById('loader-content');
+            loader.innerHTML = `
+                <h1 class="text-2xl font-black text-indigo-600 mb-6 italic">Suivi Ortho 🦷</h1>
+                <button onclick="login()" class="bg-white border border-slate-200 px-6 py-3 rounded-2xl shadow-sm flex items-center gap-3 font-bold text-slate-700 hover:scale-105 transition-transform active:scale-95">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                    Se connecter avec Google
+                </button>
+                <p class="mt-6 text-[9px] text-slate-400 uppercase font-black tracking-[0.2em] text-center">Sauvegarde automatique<br>pour Maya et ses amies</p>
+            `;
+            document.getElementById('loader').style.display = 'flex';
+            document.getElementById('loader').style.opacity = '1';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
+        }
+
+        function checkTimeAndAlert() {
+            const now = new Date();
+            const todayKey = now.toISOString().split('T')[0];
+            const alert = document.getElementById('time-alert');
+            if (now.getHours() >= 19 && (!daysState || !daysState[todayKey])) alert.classList.remove('hidden');
+            else alert.classList.add('hidden');
+        }
+
+        window.confirmReset = () => { 
+            if(confirm("Recommencer à zéro aujourd'hui ?")) {
+                set(ref(db, 'users/' + currentUser.uid), { startDate: new Date().toISOString(), suivi: {} });
+            }
+        };
+    </script>
+</body>
+</html>
