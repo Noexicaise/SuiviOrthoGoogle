@@ -39,33 +39,33 @@
     <div id="loader">
         <div id="loader-content" class="flex flex-col items-center">
             <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
-            <p class="text-slate-500 font-bold text-sm text-center">Préparation de ton sourire...<br><span class="text-[10px] opacity-50">Synchronisation Cloud</span></p>
+            <p class="text-slate-500 font-bold text-sm text-center">Synchronisation...<br><span class="text-[10px] opacity-50 italic text-indigo-500">Ton sourire arrive !</span></p>
         </div>
     </div>
 
     <header class="bg-white p-6 shadow-sm rounded-b-[40px] mb-6 flex justify-between items-center border-b border-slate-100">
         <div>
-            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight text-indigo-600">Suivi Ortho ✨</h1>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight text-indigo-600">Mon Suivi 🦷</h1>
             <div class="flex items-center gap-2">
                 <div id="status-dot" class="h-2 w-2 rounded-full bg-slate-300"></div>
-                <p id="status-text" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-ellipsis overflow-hidden max-w-[150px]">Connexion...</p>
+                <p id="status-text" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">Vérification...</p>
             </div>
         </div>
         <div class="flex gap-2">
             <button id="logout-btn" onclick="logout()" class="hidden bg-slate-100 p-3 rounded-2xl text-sm hover:bg-rose-100 transition-colors">🚪</button>
-            <button onclick="alert('Installe l\'app sur ton écran d\'accueil pour un meilleur suivi !')" class="bg-slate-100 p-3 rounded-2xl text-xl hover:bg-indigo-100 transition-colors">🔔</button>
+            <button onclick="alert('Ajoute cette app à ton écran d\'accueil pour ne rater aucun jour !')" class="bg-slate-100 p-3 rounded-2xl text-xl hover:bg-indigo-100 transition-colors">🔔</button>
         </div>
     </header>
 
     <main id="app-content" class="max-w-md mx-auto px-6 opacity-0 transition-opacity duration-500">
         <div class="bg-slate-900 rounded-[32px] p-6 text-white mb-8 shadow-2xl relative overflow-hidden">
-            <div id="time-alert" class="hidden absolute top-0 right-0 bg-orange-500 text-[8px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-tighter">C'est l'heure de 19h ! ⏳</div>
+            <div id="time-alert" class="hidden absolute top-0 right-0 bg-orange-500 text-[8px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-tighter">C'est l'heure ! ⏳</div>
             <div class="flex justify-between items-end mb-4">
                 <div>
-                    <p class="text-indigo-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Objectif Sourire</p>
+                    <p class="text-indigo-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Objectif 30 Jours</p>
                     <h2 class="text-5xl font-black italic" id="counter">0 / 30</h2>
                 </div>
-                <p id="message" class="text-indigo-400 font-bold text-sm leading-tight max-w-[120px] text-right">Chargement...</p>
+                <p id="message" class="text-indigo-400 font-bold text-sm leading-tight max-w-[120px] text-right">...</p>
             </div>
             <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden p-1">
                 <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
@@ -80,10 +80,9 @@
                 <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-700"></div>Double</div>
                 <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-rose-500"></div>Oubli</div>
             </div>
-            <p class="text-center text-[8px] text-slate-300 uppercase font-bold tracking-widest italic italic">Double clic = Mode "Double" / Appui long = Oubli</p>
         </div>
 
-        <button onclick="confirmReset()" class="block mx-auto mt-12 text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Réinitialiser mon suivi</button>
+        <button onclick="confirmReset()" class="block mx-auto mt-12 text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Réinitialiser mon calendrier</button>
     </main>
 
     <script type="module">
@@ -108,7 +107,6 @@
         let startDate = null;
         const totalDays = 30;
 
-        // --- GESTION DE L'AUTHENTIFICATION ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -116,13 +114,11 @@
                 document.getElementById('status-text').innerText = user.displayName;
                 document.getElementById('status-dot').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
                 
-                // On récupère la date de début et les données depuis Firebase
                 const userPath = 'users/' + user.uid;
                 onValue(ref(db, userPath), (snapshot) => {
                     const data = snapshot.val() || {};
-                    daysState = data.suivi || {};
                     
-                    // Si aucune date de début, on l'initialise
+                    // DATE DYNAMIQUE : On enregistre le premier jour de connexion
                     if (!data.startDate) {
                         startDate = new Date();
                         set(ref(db, userPath + '/startDate'), startDate.toISOString());
@@ -130,6 +126,7 @@
                         startDate = new Date(data.startDate);
                     }
                     
+                    daysState = data.suivi || {};
                     render();
                     checkTimeAndAlert();
                     hideLoader();
@@ -140,16 +137,13 @@
         });
 
         window.login = () => {
-            signInWithPopup(auth, provider).catch(error => alert("Oups ! " + error.message));
+            signInWithPopup(auth, provider).catch(error => alert("Domaine non autorisé. Vérifie tes paramètres Firebase !"));
         };
 
         window.logout = () => {
-            if(confirm("Se déconnecter de " + currentUser.displayName + " ?")) {
-                signOut(auth).then(() => location.reload());
-            }
+            if(confirm("Se déconnecter ?")) signOut(auth).then(() => location.reload());
         };
 
-        // --- RENDU ET LOGIQUE ---
         function render() {
             const grid = document.getElementById('grid');
             let currentTotal = 0;
@@ -191,7 +185,7 @@
             
             document.getElementById('counter').innerText = `${currentTotal} / ${totalDays}`;
             document.getElementById('progress-bar').style.width = `${Math.min((currentTotal/totalDays)*100, 100)}%`;
-            document.getElementById('message').innerText = currentTotal >= totalDays ? "Gagné ! 🎉" : (isAfter19h && !daysState[todayStr] ? "Vite ! 🦷" : "Bravo ! ✨");
+            document.getElementById('message').innerText = currentTotal >= totalDays ? "Objectif atteint ! 🎉" : (isAfter19h && !daysState[todayStr] ? "À faire ce soir ! 🦷" : "Bravo, continue ! ✨");
             document.getElementById('app-content').classList.remove('opacity-0');
         }
 
@@ -225,7 +219,6 @@
             const newState = {...daysState};
             if (newState[key] === type) delete newState[key];
             else newState[key] = type;
-            
             set(ref(db, 'users/' + currentUser.uid + '/suivi'), newState);
             if (window.navigator.vibrate) window.navigator.vibrate(10);
             
@@ -236,12 +229,12 @@
         function showLoginScreen() {
             const loader = document.getElementById('loader-content');
             loader.innerHTML = `
-                <h1 class="text-2xl font-black text-indigo-600 mb-6 italic">Suivi Ortho 🦷</h1>
+                <h1 class="text-2xl font-black text-indigo-600 mb-6 italic">Mon Suivi 🦷</h1>
                 <button onclick="login()" class="bg-white border border-slate-200 px-6 py-3 rounded-2xl shadow-sm flex items-center gap-3 font-bold text-slate-700 hover:scale-105 transition-transform active:scale-95">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
                     Se connecter avec Google
                 </button>
-                <p class="mt-6 text-[9px] text-slate-400 uppercase font-black tracking-[0.2em] text-center">Sauvegarde automatique<br>pour Maya et ses amies</p>
+                <p class="mt-6 text-[9px] text-slate-400 uppercase font-black tracking-[0.2em] text-center italic">Tes données sont sauvegardées<br>sur ton compte privé</p>
             `;
             document.getElementById('loader').style.display = 'flex';
             document.getElementById('loader').style.opacity = '1';
@@ -255,13 +248,13 @@
         function checkTimeAndAlert() {
             const now = new Date();
             const todayKey = now.toISOString().split('T')[0];
-            const alert = document.getElementById('time-alert');
-            if (now.getHours() >= 19 && (!daysState || !daysState[todayKey])) alert.classList.remove('hidden');
-            else alert.classList.add('hidden');
+            const alertBox = document.getElementById('time-alert');
+            if (now.getHours() >= 19 && (!daysState || !daysState[todayKey])) alertBox.classList.remove('hidden');
+            else alertBox.classList.add('hidden');
         }
 
         window.confirmReset = () => { 
-            if(confirm("Recommencer à zéro aujourd'hui ?")) {
+            if(confirm("Effacer tes données et recommencer les 30 jours à partir d'aujourd'hui ?")) {
                 set(ref(db, 'users/' + currentUser.uid), { startDate: new Date().toISOString(), suivi: {} });
             }
         };
