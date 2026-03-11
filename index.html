@@ -3,86 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Suivi Ortho 🦷</title>
+    <title>Mon Suivi 🦷</title>
     
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6366F1">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="apple-touch-icon" href="/icon.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
-        * { -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; user-select: none; font-family: 'Plus Jakarta Sans', sans-serif; }
-        body { background-color: #F8FAFC; overscroll-behavior: none; }
-        .day-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); position: relative; }
-        .is-pressing { transform: scale(0.92); filter: brightness(0.9); }
         
-        .completed-done { background-color: #22C55E !important; border-color: #16A34A !important; color: white !important; }
-        .completed-double { background-color: #059669 !important; border-color: #047857 !important; color: white !important; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
-        .completed-missed { background-color: #F43F5E !important; border-color: #E11D48 !important; color: white !important; }
+        * { -webkit-tap-highlight-color: transparent; user-select: none; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: #F8FAFC; overscroll-behavior: none; }
+
+        @keyframes floating {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+        .animate-tooth { display: inline-block; animation: floating 3s ease-in-out infinite; }
+
+        .day-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .is-pressing { transform: scale(0.92); filter: brightness(0.9); }
+        .completed-done { background-color: #22C55E !important; color: white !important; border-color: #16A34A !important; }
+        .completed-double { background-color: #059669 !important; color: white !important; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+        .completed-missed { background-color: #F43F5E !important; color: white !important; }
         
         @keyframes pulse-orange {
-            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); border-color: #fb923c; }
-            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); border-color: #f97316; }
-            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); border-color: #fb923c; }
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
         }
-        .needs-attention { animation: pulse-orange 2s infinite; border-width: 3px !important; }
-        #loader { position: fixed; inset: 0; background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s ease; }
+        .needs-attention { animation: pulse-orange 2s infinite; border: 3px solid #f97316 !important; }
+        
+        #loader { position: fixed; inset: 0; background: white; display: flex; align-items: center; justify-content: center; z-index: 100; transition: opacity 0.5s ease; }
+        .tab-btn { transition: all 0.3s ease; border-bottom: 2px solid transparent; }
+        .tab-btn.active { border-bottom: 3px solid #6366F1; color: #6366F1; font-weight: 800; }
     </style>
 </head>
-<body class="pb-10">
+<body>
 
     <div id="loader">
-        <div id="loader-content" class="flex flex-col items-center">
+        <div id="loader-content" class="flex flex-col items-center px-6 text-center w-full">
             <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4"></div>
-            <p class="text-slate-500 font-bold text-sm text-center">Synchronisation...<br><span class="text-[10px] opacity-50 italic text-indigo-500">Ton sourire arrive !</span></p>
         </div>
     </div>
 
-    <header class="bg-white p-6 shadow-sm rounded-b-[40px] mb-6 flex justify-between items-center border-b border-slate-100">
-        <div>
-            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight text-indigo-600">Mon Suivi 🦷</h1>
-            <div class="flex items-center gap-2">
-                <div id="status-dot" class="h-2 w-2 rounded-full bg-slate-300"></div>
-                <p id="status-text" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate max-w-[150px]">Vérification...</p>
-            </div>
+    <header class="bg-white p-5 shadow-sm rounded-b-[35px] mb-6 flex justify-between items-center border-b border-slate-50">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl animate-tooth">🦷</span>
+            <h1 class="text-xl font-black text-slate-800 italic tracking-tight">Mon <span class="text-indigo-600">Suivi</span></h1>
         </div>
-        <div class="flex gap-2">
-            <button id="logout-btn" onclick="logout()" class="hidden bg-slate-100 p-3 rounded-2xl text-sm hover:bg-rose-100 transition-colors">🚪</button>
-            <button onclick="alert('Ajoute cette app à ton écran d\'accueil pour ne rater aucun jour !')" class="bg-slate-100 p-3 rounded-2xl text-xl hover:bg-indigo-100 transition-colors">🔔</button>
-        </div>
+        <button id="logout-btn" onclick="logout()" class="hidden bg-slate-100 p-3 rounded-2xl text-sm">🚪</button>
     </header>
 
     <main id="app-content" class="max-w-md mx-auto px-6 opacity-0 transition-opacity duration-500">
         <div class="bg-slate-900 rounded-[32px] p-6 text-white mb-8 shadow-2xl relative overflow-hidden">
-            <div id="time-alert" class="hidden absolute top-0 right-0 bg-orange-500 text-[8px] font-black px-3 py-1 rounded-bl-lg uppercase tracking-tighter">C'est l'heure ! ⏳</div>
+            <div id="time-alert" class="hidden absolute top-0 right-0 bg-orange-500 text-[10px] font-black px-4 py-1.5 rounded-bl-2xl uppercase tracking-tighter italic z-10">C'est l'heure ! ⏳</div>
             <div class="flex justify-between items-end mb-4">
                 <div>
                     <p class="text-indigo-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">Objectif 30 Jours</p>
                     <h2 class="text-5xl font-black italic" id="counter">0 / 30</h2>
                 </div>
-                <p id="message" class="text-indigo-400 font-bold text-sm leading-tight max-w-[120px] text-right">...</p>
+                <p id="message" class="text-indigo-400 font-bold text-sm leading-tight max-w-[120px] text-right">Prêt ?</p>
             </div>
-            <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden p-1">
-                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%"></div>
+            <div class="w-full bg-slate-800 h-3 rounded-full overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-full rounded-full transition-all duration-1000" style="width: 0%"></div>
             </div>
         </div>
 
         <div class="grid grid-cols-4 gap-3" id="grid"></div>
 
-        <div class="mt-8 space-y-3">
-            <div class="flex justify-center gap-4 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-500"></div>Fait</div>
-                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-700"></div>Double</div>
-                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-rose-500"></div>Oubli</div>
-            </div>
-        </div>
-
-        <button onclick="confirmReset()" class="block mx-auto mt-12 text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Réinitialiser mon calendrier</button>
+        <button onclick="confirmReset()" class="block mx-auto mt-12 text-slate-300 text-[10px] font-bold uppercase tracking-[0.2em]">Réinitialiser les 30 jours</button>
     </main>
 
     <script type="module">
@@ -92,7 +88,7 @@
 
         const firebaseConfig = {
             apiKey: "AIzaSyBw6soSae9hhG1I79KDcl0P6NdeBR2xLLs",
-			authDomain: "mon-sourire.firebaseapp.com", // AJOUTE CETTE LIGNE SI ELLE MANQUE
+            authDomain: "mon-sourire.firebaseapp.com",
             databaseURL: "https://mon-sourire-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "mon-sourire",
             appId: "1:891324344626:web:b3a769bbe2298f85654f2b"
@@ -106,44 +102,40 @@
         let daysState = {};
         let currentUser = null;
         let startDate = null;
-        const totalDays = 30;
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
                 document.getElementById('logout-btn').classList.remove('hidden');
-                document.getElementById('status-text').innerText = user.displayName;
-                document.getElementById('status-dot').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
-                
-                const userPath = 'users/' + user.uid;
-                onValue(ref(db, userPath), (snapshot) => {
+                onValue(ref(db, 'users/' + user.uid), (snapshot) => {
                     const data = snapshot.val() || {};
-                    
-                    // DATE DYNAMIQUE : On enregistre le premier jour de connexion
                     if (!data.startDate) {
                         startDate = new Date();
-                        set(ref(db, userPath + '/startDate'), startDate.toISOString());
-                    } else {
-                        startDate = new Date(data.startDate);
-                    }
-                    
+                        set(ref(db, 'users/' + user.uid + '/startDate'), startDate.toISOString());
+                    } else { startDate = new Date(data.startDate); }
                     daysState = data.suivi || {};
                     render();
                     checkTimeAndAlert();
                     hideLoader();
                 });
-            } else {
-                showLoginScreen();
-            }
+            } else { showLoginScreen(); }
         });
 
-        window.login = () => {
-            signInWithPopup(auth, provider).catch(error => alert("Domaine non autorisé. Vérifie tes paramètres Firebase !"));
-        };
+        window.login = () => signInWithPopup(auth, provider);
+        window.logout = () => signOut(auth).then(() => location.reload());
 
-        window.logout = () => {
-            if(confirm("Se déconnecter ?")) signOut(auth).then(() => location.reload());
-        };
+        // Fonction de rappel visuel (Check 19h)
+        function checkTimeAndAlert() {
+            const now = new Date();
+            const todayKey = now.toISOString().split('T')[0];
+            const alertBox = document.getElementById('time-alert');
+            // Si après 19h ET (pas de données pour aujourd'hui OU état vide pour aujourd'hui)
+            if (now.getHours() >= 19 && (!daysState || !daysState[todayKey])) {
+                alertBox.classList.remove('hidden');
+            } else {
+                alertBox.classList.add('hidden');
+            }
+        }
 
         function render() {
             const grid = document.getElementById('grid');
@@ -153,7 +145,7 @@
             const isAfter19h = now.getHours() >= 19;
 
             grid.innerHTML = '';
-            for (let i = 0; i < totalDays; i++) {
+            for (let i = 0; i < 30; i++) {
                 const date = new Date(startDate); 
                 date.setDate(startDate.getDate() + i);
                 const key = date.toISOString().split('T')[0];
@@ -166,79 +158,96 @@
                 btn.className = `day-btn h-20 rounded-[22px] border-2 flex flex-col items-center justify-center font-bold `;
                 
                 if (state === 'done') {
-                    btn.classList.add('completed-done');
-                    btn.innerHTML = '✅';
+                    btn.classList.add('completed-done'); btn.innerHTML = '✅';
                 } else if (state === 'double') {
-                    btn.classList.add('completed-double');
-                    btn.innerHTML = '<span class="text-[10px] mb-0.5">x2</span>✅';
+                    btn.classList.add('completed-double'); btn.innerHTML = '<span class="text-[10px]">x2</span>✅';
                 } else if (state === 'missed') {
-                    btn.classList.add('completed-missed');
-                    btn.innerHTML = '❌';
+                    btn.classList.add('completed-missed'); btn.innerHTML = '❌';
                 } else {
                     btn.classList.add('bg-white', 'border-slate-100', 'text-slate-400');
                     btn.innerHTML = `<span class="text-[9px] opacity-50 uppercase">${date.toLocaleDateString('fr-FR', {weekday:'short'})}</span><span class="text-xl">${date.getDate()}</span>`;
                     if (key === todayStr && isAfter19h) btn.classList.add('needs-attention');
                 }
-
                 setupTouchEvents(btn, key);
                 grid.appendChild(btn);
             }
-            
-            document.getElementById('counter').innerText = `${currentTotal} / ${totalDays}`;
-            document.getElementById('progress-bar').style.width = `${Math.min((currentTotal/totalDays)*100, 100)}%`;
-            document.getElementById('message').innerText = currentTotal >= totalDays ? "Objectif atteint ! 🎉" : (isAfter19h && !daysState[todayStr] ? "À faire ce soir ! 🦷" : "Bravo, continue ! ✨");
+            document.getElementById('counter').innerText = `${currentTotal} / 30`;
+            document.getElementById('progress-bar').style.width = `${Math.min((currentTotal/30)*100, 100)}%`;
             document.getElementById('app-content').classList.remove('opacity-0');
         }
 
         let lastTap = 0;
         let pressTimer;
-
         function setupTouchEvents(btn, key) {
             btn.onpointerdown = () => {
                 btn.classList.add('is-pressing');
-                pressTimer = setTimeout(() => {
-                    if (window.navigator.vibrate) window.navigator.vibrate(40);
-                    updateCloud(key, 'missed');
-                }, 700);
+                pressTimer = setTimeout(() => updateCloud(key, 'missed'), 700);
             };
-
             btn.onpointerup = () => {
                 clearTimeout(pressTimer);
                 btn.classList.remove('is-pressing');
                 const now = Date.now();
-                if (now - lastTap < 300) {
-                    updateCloud(key, 'double');
-                } else {
-                    setTimeout(() => { if (Date.now() - lastTap >= 300) updateCloud(key, 'done'); }, 300);
-                }
+                if (now - lastTap < 300) updateCloud(key, 'double');
+                else setTimeout(() => { if (Date.now() - lastTap >= 300) updateCloud(key, 'done'); }, 300);
                 lastTap = now;
             };
         }
 
         function updateCloud(key, type) {
-            if (!currentUser) return;
             const newState = {...daysState};
-            if (newState[key] === type) delete newState[key];
-            else newState[key] = type;
+            if (newState[key] === type) delete newState[key]; else newState[key] = type;
             set(ref(db, 'users/' + currentUser.uid + '/suivi'), newState);
-            if (window.navigator.vibrate) window.navigator.vibrate(10);
-            
-            const score = Object.values(newState).reduce((acc, val) => (val === 'done' ? acc + 1 : (val === 'double' ? acc + 2 : acc)), 0);
-            if (score >= totalDays) confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            if (type !== 'missed') confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
         }
 
-        function showLoginScreen() {
+        window.showLoginScreen = () => {
             const loader = document.getElementById('loader-content');
             loader.innerHTML = `
-                <h1 class="text-2xl font-black text-indigo-600 mb-6 italic">Mon Suivi 🦷</h1>
-                <button onclick="login()" class="bg-white border border-slate-200 px-6 py-3 rounded-2xl shadow-sm flex items-center gap-3 font-bold text-slate-700 hover:scale-105 transition-transform active:scale-95">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
-                    Se connecter avec Google
+                <div class="mb-12 text-center flex flex-col items-center">
+                    <div class="mb-4">
+                        <span class="text-6xl animate-tooth inline-block">🦷</span>
+                        <div class="text-indigo-600 text-3xl font-light -mt-4 opacity-40 italic">︶</div>
+                    </div>
+                    <h1 class="text-4xl font-black text-slate-800 italic tracking-tight">Mon <span class="text-indigo-600">Suivi</span></h1>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em] mt-3">Prêt pour ton nouveau sourire ?</p>
+                </div>
+                
+                <button onclick="login()" class="bg-white border border-slate-100 px-8 py-4 rounded-[28px] shadow-xl shadow-indigo-100/50 flex items-center gap-4 font-bold text-slate-700 hover:scale-105 transition-all active:scale-95 mb-14">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="22">
+                    Continuer avec Google
                 </button>
-                <p class="mt-6 text-[9px] text-slate-400 uppercase font-black tracking-[0.2em] text-center italic">Tes données sont sauvegardées<br>sur ton compte privé</p>
+
+                <div class="bg-white/90 backdrop-blur-md border border-slate-100 rounded-[35px] shadow-sm w-full max-w-[325px] overflow-hidden">
+                    <div class="flex border-b border-slate-50">
+                        <button onclick="switchTab('ios')" id="tab-ios" class="tab-btn active flex-1 py-4 text-[11px] font-extrabold uppercase tracking-widest">Guide iPhone</button>
+                        <button onclick="switchTab('android')" id="tab-android" class="tab-btn flex-1 py-4 text-[11px] font-extrabold uppercase tracking-widest text-slate-400">Guide Android</button>
+                    </div>
+                    <div class="p-7 text-center">
+                        <div id="content-ios" class="space-y-4">
+                            <p class="text-[13px] text-slate-500 leading-relaxed italic">Sur <b>Safari</b>, appuie sur <b>Partager</b> puis sur <br><b>"Sur l'écran d'accueil"</b>.</p>
+                            <img src="https://i.imgur.com/K6K7WwS.png" class="rounded-[24px] mx-auto border border-slate-50 shadow-sm" style="max-height:140px" onerror="this.style.display='none'">
+                        </div>
+                        <div id="content-android" class="hidden space-y-4">
+                            <p class="text-[13px] text-slate-500 leading-relaxed italic">Sur <b>Chrome</b>, appuie sur les <b>3 points</b> puis sur <br><b>"Installer l'application"</b>.</p>
+                        </div>
+                    </div>
+                </div>
             `;
+            
+            window.switchTab = (platform) => {
+                const iosBtn = document.getElementById('tab-ios');
+                const andBtn = document.getElementById('tab-android');
+                const iosCont = document.getElementById('content-ios');
+                const andCont = document.getElementById('content-android');
+                if (platform === 'ios') {
+                    iosBtn.classList.add('active'); andBtn.classList.remove('active');
+                    iosCont.classList.remove('hidden'); andCont.classList.add('hidden');
+                } else {
+                    andBtn.classList.add('active'); iosBtn.classList.remove('active');
+                    andCont.classList.remove('hidden'); iosCont.classList.add('hidden');
+                }
+            };
             document.getElementById('loader').style.display = 'flex';
-            document.getElementById('loader').style.opacity = '1';
         }
 
         function hideLoader() {
@@ -246,19 +255,13 @@
             setTimeout(() => document.getElementById('loader').style.display = 'none', 500);
         }
 
-        function checkTimeAndAlert() {
-            const now = new Date();
-            const todayKey = now.toISOString().split('T')[0];
-            const alertBox = document.getElementById('time-alert');
-            if (now.getHours() >= 19 && (!daysState || !daysState[todayKey])) alertBox.classList.remove('hidden');
-            else alertBox.classList.add('hidden');
-        }
-
         window.confirmReset = () => { 
             if(confirm("Effacer tes données et recommencer les 30 jours à partir d'aujourd'hui ?")) {
                 set(ref(db, 'users/' + currentUser.uid), { startDate: new Date().toISOString(), suivi: {} });
             }
         };
+
+        if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     </script>
 </body>
 </html>
